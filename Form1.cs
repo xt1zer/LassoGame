@@ -6,35 +6,55 @@ namespace LassoGame
 {
     public partial class Form1 : Form
     {
-        int counter = 0;
-        Button[] lasso;
-        bool reversed = false;
+        private int counter = 0;
+        private readonly Button[] lasso = new Button[12];
+        private readonly Button[] horses = new Button[7];
+        private bool reversed = false;
         private enum Dir : byte { BottomRight, BottomLeft, TopLeft, TopRight, }
-        private Dir[] lassoDir = new Dir[12];
-        public Point lassoStartPos = new Point(760, 100);
+        private readonly Dir[] lassoDir = new Dir[11];
+        private Point lassoStartPos = new Point(760, 100);
+        private const byte offset = 50, w = 60;
 
-        public void CreateLasso()
+        private void CreateHorses()
         {
-            lasso = new Button[12];
+            for (byte i = 0; i < horses.Length; ++i)
+            {
+                horses[i] = new Button();
+                horses[i].Width = horses[i].Height = w;
+                horses[i].FlatStyle = FlatStyle.Flat;
+                horses[i].FlatAppearance.BorderSize = 0;
+                horses[i].BackColor = horses[i].FlatAppearance.MouseDownBackColor =
+                    horses[i].FlatAppearance.MouseOverBackColor = Color.SandyBrown;
+                Controls.Add(horses[i]);
+            }
+            horses[0].Location = new Point(lassoStartPos.X - offset * 13, lassoStartPos.Y + offset);
+            horses[1].Location = new Point(horses[0].Left + offset * 2, horses[0].Top + offset * 2);
+            horses[2].Location = new Point(horses[1].Left + offset, horses[1].Top - offset * 3);
+            horses[3].Location = new Point(horses[2].Left + offset, horses[1].Top);
+            horses[4].Location = new Point(horses[2].Left + offset * 2, horses[2].Top);
+            horses[5].Location = new Point(horses[4].Left, horses[3].Top + offset);
+            horses[6].Location = new Point(horses[5].Left + offset * 2, horses[0].Top + offset);
+        }
+
+        private void CreateLasso()
+        {
             for (int i = 0; i < lasso.Length; ++i)
             {
-                Button lassoPart = new Button();
+                lasso[i] = new Button();
 
-                lassoPart.FlatStyle = FlatStyle.Flat;
-                lassoPart.FlatAppearance.BorderSize = 0;
-                lassoPart.Tag = i;
-                lassoPart.SetBounds(lassoStartPos.X + 50 * i, lassoStartPos.Y + 50 * i, 60, 60);
+                lasso[i].FlatStyle = FlatStyle.Flat;
+                lasso[i].FlatAppearance.BorderSize = 0;
+                lasso[i].Tag = i;
+                lasso[i].SetBounds(lassoStartPos.X + offset * i, lassoStartPos.Y + offset * i, w, w);
 
                 if (i < 5 || i == 6)
-                    lassoPart.BackColor = lassoPart.FlatAppearance.MouseDownBackColor =
-                        lassoPart.FlatAppearance.MouseOverBackColor = SystemColors.ControlDark;
+                    lasso[i].BackColor = lasso[i].FlatAppearance.MouseDownBackColor =
+                        lasso[i].FlatAppearance.MouseOverBackColor = SystemColors.ControlDark;
                 else
-                    lassoPart.BackColor = lassoPart.FlatAppearance.MouseDownBackColor =
-                        lassoPart.FlatAppearance.MouseOverBackColor = SystemColors.ActiveCaption;
+                    lasso[i].BackColor = lasso[i].FlatAppearance.MouseDownBackColor =
+                        lasso[i].FlatAppearance.MouseOverBackColor = SystemColors.ActiveCaption;
 
-                lasso[i] = lassoPart;
                 Controls.Add(lasso[i]);
-                lasso[i].BringToFront();
                 lasso[i].Click += LassoClick;
             }
         }
@@ -42,6 +62,7 @@ namespace LassoGame
         {
             InitializeComponent();
             CreateLasso();
+            CreateHorses();
         }
 
         private void LassoClick(object sender, EventArgs e)
@@ -51,79 +72,156 @@ namespace LassoGame
 
             Button lassoPart = sender as Button;
             int ind = Convert.ToInt32(lassoPart.Tag);
-            int colour = lassoPart.BackColor == SystemColors.ControlDark ? 1 : -1;
-            int offset = Math.Abs(lasso[1].Top - lasso[0].Top);
 
-            if (!reversed)
-                for (int i = ind + 1; i < lasso.Length; i++)
-                    switch (lassoDir[i - 1])
-                    {
-                        case Dir.BottomRight:
-                            {
-                                lasso[i].Left = lasso[i - 1].Left - colour * offset;
-                                lasso[i].Top = lasso[i - 1].Top + colour * offset;
-                                lassoDir[i - 1] = colour == 1 ? Dir.BottomLeft : Dir.TopRight;
-                                break;
-                            }
-                        case Dir.BottomLeft:
-                            {
-                                lasso[i].Left = lasso[i - 1].Left - colour * offset;
-                                lasso[i].Top = lasso[i - 1].Top - colour * offset;
-                                lassoDir[i - 1] = colour == 1 ? Dir.TopLeft : Dir.BottomRight;
-                                break;
-                            }
-                        case Dir.TopLeft:
-                            {
-                                lasso[i].Left = lasso[i - 1].Left + colour * offset;
-                                lasso[i].Top = lasso[i - 1].Top - colour * offset;
-                                lassoDir[i - 1] = colour == 1 ? Dir.TopRight : Dir.BottomLeft;
-                                break;
-                            }
-                        case Dir.TopRight:
-                            {
-                                lasso[i].Left = lasso[i - 1].Left + colour * offset;
-                                lasso[i].Top = lasso[i - 1].Top + colour * offset;
-                                lassoDir[i - 1] = colour == 1 ? Dir.BottomRight : Dir.TopLeft;
-                                break;
-                            }
-                    }
+            if (lassoPart.BackColor == SystemColors.ControlDark)
+            {
+                if (!reversed)
+                {
+                    for (int i = ind + 1; i < lasso.Length; i++)
+                        switch (lassoDir[i - 1])
+                        {
+                            case Dir.BottomRight:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left - offset;
+                                    lasso[i].Top = lasso[i - 1].Top + offset;
+                                    lassoDir[i - 1] = Dir.BottomLeft;
+                                    break;
+                                }
+                            case Dir.BottomLeft:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left - offset;
+                                    lasso[i].Top = lasso[i - 1].Top - offset;
+                                    lassoDir[i - 1] = Dir.TopLeft;
+                                    break;
+                                }
+                            case Dir.TopLeft:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left + offset;
+                                    lasso[i].Top = lasso[i - 1].Top - offset;
+                                    lassoDir[i - 1] = Dir.TopRight;
+                                    break;
+                                }
+                            case Dir.TopRight:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left + offset;
+                                    lasso[i].Top = lasso[i - 1].Top + offset;
+                                    lassoDir[i - 1] = Dir.BottomRight;
+                                    break;
+                                }
+                        }
+                }
+                else
+                {
+                    for (int i = ind - 1; i >= 0; i--)
+                        switch (lassoDir[i])
+                        {
+                            case Dir.BottomRight:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left + offset;
+                                    lasso[i].Top = lasso[i + 1].Top - offset;
+                                    lassoDir[i] = Dir.BottomLeft;
+                                    break;
+                                }
+                            case Dir.BottomLeft:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left + offset;
+                                    lasso[i].Top = lasso[i + 1].Top + offset;
+                                    lassoDir[i] = Dir.TopLeft;
+                                    break;
+                                }
+                            case Dir.TopLeft:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left - offset;
+                                    lasso[i].Top = lasso[i + 1].Top + offset;
+                                    lassoDir[i] = Dir.TopRight;
+                                    break;
+                                }
+                            case Dir.TopRight:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left - offset;
+                                    lasso[i].Top = lasso[i + 1].Top - offset;
+                                    lassoDir[i] = Dir.BottomRight;
+                                    break;
+                                }
+
+                        }
+                }
+            }
             else
             {
-                colour *= -1;
-                for (int i = ind - 1; i >= 0; i--)
-                    switch ((Dir)lassoDir[i])
-                    {
-                        case Dir.BottomRight:
-                            {
-                                lasso[i].Left = lasso[i + 1].Left - colour * offset;
-                                lasso[i].Top = lasso[i + 1].Top + colour * offset;
-                                lassoDir[i] = colour == 1 ? Dir.TopRight : Dir.BottomLeft;
-                                break;
-                            }
-                        case Dir.BottomLeft:
-                            {
-                                lasso[i].Left = lasso[i + 1].Left - colour * offset;
-                                lasso[i].Top = lasso[i + 1].Top - colour * offset;
-                                lassoDir[i] = colour == 1 ? Dir.BottomRight : Dir.TopLeft;
-                                break;
-                            }
-                        case Dir.TopLeft:
-                            {
-                                lasso[i].Left = lasso[i + 1].Left + colour * offset;
-                                lasso[i].Top = lasso[i + 1].Top - colour * offset;
-                                lassoDir[i] = colour == 1 ? Dir.BottomLeft : Dir.TopRight;
-                                break;
-                            }
-                        case Dir.TopRight:
-                            {
-                                lasso[i].Left = lasso[i + 1].Left + colour * offset;
-                                lasso[i].Top = lasso[i + 1].Top + colour * offset;
-                                lassoDir[i] = colour == 1 ? Dir.TopLeft : Dir.BottomRight;
-                                break;
-                            }
+                if (!reversed)
+                {
+                    for (int i = ind + 1; i < lasso.Length; i++)
+                        switch (lassoDir[i - 1])
+                        {
+                            case Dir.BottomRight:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left + offset;
+                                    lasso[i].Top = lasso[i - 1].Top - offset;
+                                    lassoDir[i - 1] = Dir.TopRight;
+                                    break;
+                                }
+                            case Dir.BottomLeft:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left + offset;
+                                    lasso[i].Top = lasso[i - 1].Top + offset;
+                                    lassoDir[i - 1] = Dir.BottomRight;
+                                    break;
+                                }
+                            case Dir.TopLeft:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left - offset;
+                                    lasso[i].Top = lasso[i - 1].Top + offset;
+                                    lassoDir[i - 1] = Dir.BottomLeft;
+                                    break;
+                                }
+                            case Dir.TopRight:
+                                {
+                                    lasso[i].Left = lasso[i - 1].Left - offset;
+                                    lasso[i].Top = lasso[i - 1].Top - offset;
+                                    lassoDir[i - 1] = Dir.TopLeft;
+                                    break;
+                                }
+                        }
+                }
+                else
+                {
+                    for (int i = ind - 1; i >= 0; i--)
+                        switch (lassoDir[i])
+                        {
+                            case Dir.BottomRight:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left - offset;
+                                    lasso[i].Top = lasso[i + 1].Top + offset;
+                                    lassoDir[i] = Dir.TopRight;
+                                    break;
+                                }
+                            case Dir.BottomLeft:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left - offset;
+                                    lasso[i].Top = lasso[i + 1].Top - offset;
+                                    lassoDir[i] = Dir.BottomRight;
+                                    break;
+                                }
+                            case Dir.TopLeft:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left + offset;
+                                    lasso[i].Top = lasso[i + 1].Top - offset;
+                                    lassoDir[i] = Dir.BottomLeft;
+                                    break;
+                                }
+                            case Dir.TopRight:
+                                {
+                                    lasso[i].Left = lasso[i + 1].Left + offset;
+                                    lasso[i].Top = lasso[i + 1].Top + offset;
+                                    lassoDir[i] = Dir.TopLeft;
+                                    break;
+                                }
 
-                    }
+                        }
+                }
             }
+
         }
 
         private void RestartGame(object sender, EventArgs e)
@@ -141,8 +239,8 @@ namespace LassoGame
             }
             for (int i = 0; i < lasso.Length; i++)
             {
-                lasso[i].Left = lassoStartPos.X + 50 * i;
-                lasso[i].Top = lassoStartPos.Y + 50 * i;
+                lasso[i].Left = lassoStartPos.X + offset * i;
+                lasso[i].Top = lassoStartPos.Y + offset * i;
             }
         }
 
